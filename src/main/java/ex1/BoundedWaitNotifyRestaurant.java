@@ -7,19 +7,22 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 /**
- * An implementation of {@code Restaurant} which uses semaphores to ensure thread-safety and avoid spinning.
+ * An implementation of {@code Restaurant} which uses {@code wait()} and {@code notify()} to ensure thread-safety and avoid spinning.
  */
-public class BoundedSemaphoreRestaurant implements Restaurant {
-
+public class BoundedWaitNotifyRestaurant implements Restaurant {
     private final int size;
     private final Queue<Order> queue = new LinkedList<>();
+    private int firstFree;
+    private int firstFull;
 
     /**
      * Constructs a new NaiveRestaurant with the given maximum queue size.
      * @param size The maximum number of orders this restaurant can process at once.
      */
-    public BoundedSemaphoreRestaurant(int size) {
+    public BoundedWaitNotifyRestaurant(int size) {
         this.size = size;
+        firstFree = 0;
+        firstFull = 0;
     }
 
     /**
@@ -27,10 +30,11 @@ public class BoundedSemaphoreRestaurant implements Restaurant {
      * @param order The order to be queued.
      */
     @Override
-    public void receive(Order order) throws InterruptedException {
-        while (queue.size() >= size) {
-            if (Thread.interrupted()) throw new InterruptedException();
+    public synchronized void receive(Order order) throws InterruptedException {
+        while (queue.size() >= size) {  
+            this.wait();
         }
+
         queue.add(order);
     }
 

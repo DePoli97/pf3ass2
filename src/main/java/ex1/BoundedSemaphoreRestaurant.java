@@ -5,20 +5,27 @@ import shared.Restaurant;
 
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.Semaphore;
 
 /**
- * An implementation of {@code Restaurant} which uses {@code wait()} and {@code notify()} to ensure thread-safety and avoid spinning.
+ * An implementation of {@code Restaurant} which uses semaphores to ensure thread-safety and avoid spinning.
  */
-public class BoundedWaitNotifyRestaurant implements Restaurant {
+public class BoundedSemaphoreRestaurant implements Restaurant {
+
     private final int size;
     private final Queue<Order> queue = new LinkedList<>();
-
+    private Semaphore fullSlots;
+    private Semaphore emptySlots;
+    private Semaphore mutex;
     /**
      * Constructs a new NaiveRestaurant with the given maximum queue size.
      * @param size The maximum number of orders this restaurant can process at once.
      */
-    public BoundedWaitNotifyRestaurant(int size) {
+    public BoundedSemaphoreRestaurant(int size) {
         this.size = size;
+        fullSlots = new Semaphore(0);
+        emptySlots = new Semaphore(size);
+        mutex = new Semaphore(1);
     }
 
     /**
@@ -27,10 +34,18 @@ public class BoundedWaitNotifyRestaurant implements Restaurant {
      */
     @Override
     public void receive(Order order) throws InterruptedException {
+        emptySlots.acquire();
+
+        mutex.acquire();
+
         while (queue.size() >= size) {
             if (Thread.interrupted()) throw new InterruptedException();
         }
         queue.add(order);
+
+        mutex.release();
+
+        fullSlots.release();
     }
 
     /**
@@ -39,9 +54,21 @@ public class BoundedWaitNotifyRestaurant implements Restaurant {
      */
     @Override
     public Order cook() throws InterruptedException {
+
+        fullSlots.acquire();
+
+        mutex.acquire();
+        
         while (queue.size() == 0) {
             if (Thread.interrupted()) throw new InterruptedException();
         }
-        return queue.poll();
+
+        Order res = queue.poll();
+
+        mutex.release();
+
+        emptySlots.release();
+        
+        return res;
     }
 }

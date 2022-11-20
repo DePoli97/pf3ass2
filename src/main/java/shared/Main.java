@@ -14,11 +14,11 @@ public final class Main {
 	public static void main(String[] args) throws InterruptedException {
 		runRestaurant(new NaiveRestaurant(SIZE), "NaiveRestaurant");
 		runRestaurant(new BoundedSemaphoreRestaurant(SIZE), "BoundedSemaphoreRestaurant");
-		runRestaurant(new BoundedWaitNotifyRestaurant(SIZE), "BoundedWaitNotifyRestaurant");
-		runRestaurant(new BoundedReentrantLockRestaurant(SIZE), "BoundedReentrantLockRestaurant");
-		runRestaurant(new UnboundedSemaphoreRestaurant(), "UnboundedSemaphoreRestaurant");
-		runRestaurant(new UnboundedWaitNotifyRestaurant(), "UnboundedWaitNotifyRestaurant");
-		runRestaurant(new UnboundedReentrantLockRestaurant(), "UnboundedReentrantLockRestaurant");
+		// runRestaurant(new BoundedWaitNotifyRestaurant(SIZE), "BoundedWaitNotifyRestaurant");
+		// runRestaurant(new BoundedReentrantLockRestaurant(SIZE), "BoundedReentrantLockRestaurant");
+		// runRestaurant(new UnboundedSemaphoreRestaurant(), "UnboundedSemaphoreRestaurant");
+		// runRestaurant(new UnboundedWaitNotifyRestaurant(), "UnboundedWaitNotifyRestaurant");
+		// runRestaurant(new UnboundedReentrantLockRestaurant(), "UnboundedReentrantLockRestaurant");
 	}
 
 	private static void runRestaurant(Restaurant restaurant, String name) throws InterruptedException {
