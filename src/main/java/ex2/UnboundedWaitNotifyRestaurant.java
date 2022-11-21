@@ -19,11 +19,7 @@ public class UnboundedWaitNotifyRestaurant implements Restaurant {
      */
     @Override
     public void receive(Order order) {
-        synchronized (this){
-            queue.add(order);
-            notify();
-        }
-
+        queue.add(order);
     }
 
     /**
@@ -32,18 +28,9 @@ public class UnboundedWaitNotifyRestaurant implements Restaurant {
      */
     @Override
     public Order cook() throws InterruptedException {
-        Order order;
-        synchronized (this){
-            while (queue.size() == 0) {
-                try{
-                    wait();
-                } catch (InterruptedException e){
-
-                }
-            }
-            order = queue.poll();
-            notify();
+        while (queue.size() == 0) {
+            if (Thread.interrupted()) throw new InterruptedException();
         }
-        return order;
+        return queue.poll();
     }
 }

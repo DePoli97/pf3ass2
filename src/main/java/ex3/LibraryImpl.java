@@ -26,13 +26,7 @@ public class LibraryImpl implements Library{
     @Override
     public int getSize() {
         // TODO: implement this method
-        rLock.lock();
-        try{
-            return movies.size();
-        } finally {
-            rLock.unlock();
-        }
-        // return 0;
+        return 0;
     }
 
     /**
@@ -46,13 +40,7 @@ public class LibraryImpl implements Library{
     @Override
     public Book getBook(String title) {
         // TODO: implement this method
-        rLock.lock();
-        try{
-            return movies.get(title);
-        } finally {
-            rLock.unlock();
-        }
-        // return null;
+        return null;
     }
 
     /**
@@ -63,13 +51,7 @@ public class LibraryImpl implements Library{
     @Override
     public Set<String> getTitles() {
         // TODO: implement this method
-        rLock.lock();
-        try{
-            return movies.keySet();
-        } finally {
-            rLock.unlock();
-        }
-        // return null;
+        return null;
     }
 
     /**
@@ -80,21 +62,7 @@ public class LibraryImpl implements Library{
     @Override
     public Book getRandomBook() {
         // TODO: implement this method
-        
-        //here the code should generate a random number between 0 and the size of the library
-        //and then return the book at that index
-        //if the library is empty, return null
-        rLock.lock();
-        try{
-            if(movies.size() == 0){
-                return null;
-            }
-            int index = generator.nextInt(movies.size());
-            return movies.values().toArray(new Book[0])[index];
-        } finally {
-            rLock.unlock();
-        }
-
+        return null;
     }
 
     /**
@@ -105,15 +73,6 @@ public class LibraryImpl implements Library{
     @Override
     public void addBook(Book book) {
         // TODO: implement this method
-        
-        //this method uses locks to ensure that only one thread can add a book at a time and the method is used to add a book to the library
-        wLock.lock();
-        try{
-            movies.put(book.title(), book);
-        } finally {
-            wLock.unlock();
-        }
-        
 
     }
 }
