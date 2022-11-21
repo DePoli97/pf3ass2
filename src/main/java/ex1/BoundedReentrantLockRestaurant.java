@@ -6,12 +6,18 @@ import shared.Restaurant;
 import java.util.LinkedList;
 import java.util.Queue;
 
+
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.Condition;
+
 /**
  * An implementation of {@code Restaurant} which uses {@code ReentrantLock} to ensure thread-safety and avoid spinning.
  */
 public class BoundedReentrantLockRestaurant implements Restaurant {
     private final int size;
     private final Queue<Order> queue = new LinkedList<>();
+	private final ReentrantLock lock = new ReentrantLock();
+	private final Condition notEmpty = lock.newCondition();
 
     /**
      * Constructs a new NaiveRestaurant with the given maximum queue size.
@@ -27,10 +33,19 @@ public class BoundedReentrantLockRestaurant implements Restaurant {
      */
     @Override
     public void receive(Order order) throws InterruptedException {
-        while (queue.size() >= size) {
-            if (Thread.interrupted()) throw new InterruptedException();
+        // while (queue.size() >= size) {
+        //     if (Thread.interrupted()) throw new InterruptedException();
+        // }
+        // queue.add(order);
+
+        processOrder();
+        lock.lock();
+        try{
+            notEmpty.signal();
+        } finally {
+            queue.add(order);
+            lock.unlock();
         }
-        queue.add(order);
     }
 
     /**
@@ -39,9 +54,23 @@ public class BoundedReentrantLockRestaurant implements Restaurant {
      */
     @Override
     public Order cook() throws InterruptedException {
-        while (queue.size() == 0) {
-            if (Thread.interrupted()) throw new InterruptedException();
+        Order order;
+        processOrder();
+        lock.lock();
+        try{
+            while (queue.size() == 0) {
+                notEmpty.await();
+            }
+        } finally {
+            order =  queue.poll();
+            lock.unlock();
         }
-        return queue.poll();
+        processOrder();
+        return order;
+    }
+
+
+    private static void processOrder() throws InterruptedException {
+        Thread.sleep(100);
     }
 }

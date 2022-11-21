@@ -6,6 +6,9 @@ import shared.Restaurant;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.Condition;
+
 /**
  * An implementation of {@code Restaurant} which uses {@code ReentrantLock} to ensure thread-safety and avoid spinning.
  * Can accept an unbounded number of orders.
@@ -13,13 +16,23 @@ import java.util.Queue;
 public class UnboundedReentrantLockRestaurant implements Restaurant {
     private final Queue<Order> queue = new LinkedList<>();
 
+	private final ReentrantLock lock = new ReentrantLock();
+	private final Condition notEmpty = lock.newCondition();
+
     /**
      * Receives an order from a client and queues it for cooking.
      * @param order The order to be queued.
      */
     @Override
     public void receive(Order order) {
-        queue.add(order);
+        lock.lock();
+        try{
+            queue.add(order);
+            notEmpty.signal();
+        } finally {
+            lock.unlock();
+        }
+
     }
 
     /**
@@ -28,9 +41,20 @@ public class UnboundedReentrantLockRestaurant implements Restaurant {
      */
     @Override
     public Order cook() throws InterruptedException {
-        while (queue.size() == 0) {
-            if (Thread.interrupted()) throw new InterruptedException();
+        Order order;
+        lock.lock();
+        try{
+            while (queue.size() == 0) {
+                try{
+                    notEmpty.await();
+                } catch (InterruptedException e){
+
+                }
+            }
+            order = queue.poll();
+        } finally {
+            lock.unlock();
         }
-        return queue.poll();
+        return order;
     }
 }

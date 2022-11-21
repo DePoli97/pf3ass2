@@ -27,10 +27,13 @@ public class BoundedWaitNotifyRestaurant implements Restaurant {
      */
     @Override
     public void receive(Order order) throws InterruptedException {
-        while (queue.size() >= size) {
-            if (Thread.interrupted()) throw new InterruptedException();
+        
+        //Thread safe implementation using wait() and notify() to avoid errors
+        processOrder();
+        synchronized(this){
+            queue.add(order);
         }
-        queue.add(order);
+        
     }
 
     /**
@@ -39,9 +42,24 @@ public class BoundedWaitNotifyRestaurant implements Restaurant {
      */
     @Override
     public Order cook() throws InterruptedException {
-        while (queue.size() == 0) {
-            if (Thread.interrupted()) throw new InterruptedException();
+        Order order;
+        processOrder();
+        synchronized (this){
+            while (queue.size() == 0) {
+                try{
+                    wait();
+                } catch (InterruptedException e){
+
+                }
+            } 
+            order = queue.poll();
+            notifyAll();
         }
-        return queue.poll();
+        processOrder();
+        return order;
+    }
+
+    private static void processOrder() throws InterruptedException {
+        Thread.sleep(100);
     }
 }
