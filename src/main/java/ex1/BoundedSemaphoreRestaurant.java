@@ -5,7 +5,7 @@ import shared.Restaurant;
 
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.*;
 
 /**
  * An implementation of {@code Restaurant} which uses semaphores to ensure thread-safety and avoid spinning.
@@ -14,18 +14,15 @@ public class BoundedSemaphoreRestaurant implements Restaurant {
 
     private final int size;
     private final Queue<Order> queue = new LinkedList<>();
-    private Semaphore fullSlots;
-    private Semaphore emptySlots;
-    private Semaphore mutex;
+    private final Semaphore mutex = new Semaphore(1);
+    private final Semaphore semaphore = new Semaphore(0);
+
     /**
      * Constructs a new NaiveRestaurant with the given maximum queue size.
      * @param size The maximum number of orders this restaurant can process at once.
      */
     public BoundedSemaphoreRestaurant(int size) {
         this.size = size;
-        fullSlots = new Semaphore(0);
-        emptySlots = new Semaphore(size);
-        mutex = new Semaphore(1);
     }
 
     /**
@@ -34,18 +31,20 @@ public class BoundedSemaphoreRestaurant implements Restaurant {
      */
     @Override
     public void receive(Order order) throws InterruptedException {
-        emptySlots.acquire();
 
+        // //Thread safe implementation using semaphores to avoid errors
+        processOrder();
         mutex.acquire();
-
-        while (queue.size() >= size) {
-            if (Thread.interrupted()) throw new InterruptedException();
-        }
+        //while (queue.size() >= size) {
+        //    if (Thread.interrupted()){
+        //        mutex.release();
+        //        throw new InterruptedException();
+        //    }
+        //}
         queue.add(order);
-
         mutex.release();
+        semaphore.release();
 
-        fullSlots.release();
     }
 
     /**
@@ -54,21 +53,22 @@ public class BoundedSemaphoreRestaurant implements Restaurant {
      */
     @Override
     public Order cook() throws InterruptedException {
-
-        fullSlots.acquire();
-
+        processOrder();
+        semaphore.acquire();
         mutex.acquire();
-        
-        while (queue.size() == 0) {
-            if (Thread.interrupted()) throw new InterruptedException();
-        }
-
-        Order res = queue.poll();
-
+        Order order = queue.poll();
         mutex.release();
 
-        emptySlots.release();
-        
-        return res;
+        processOrder();
+
+        // while (queue.size() == 0) {
+        //     if (Thread.interrupted()) throw new InterruptedException();
+        // }
+
+        return order;
+    }
+
+    private static void processOrder() throws InterruptedException {
+        Thread.sleep(100);
     }
 }

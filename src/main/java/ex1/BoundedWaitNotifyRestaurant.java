@@ -12,8 +12,6 @@ import java.util.Queue;
 public class BoundedWaitNotifyRestaurant implements Restaurant {
     private final int size;
     private final Queue<Order> queue = new LinkedList<>();
-    private int firstFree;
-    private int firstFull;
 
     /**
      * Constructs a new NaiveRestaurant with the given maximum queue size.
@@ -21,8 +19,6 @@ public class BoundedWaitNotifyRestaurant implements Restaurant {
      */
     public BoundedWaitNotifyRestaurant(int size) {
         this.size = size;
-        firstFree = 0;
-        firstFull = 0;
     }
 
     /**
@@ -30,12 +26,14 @@ public class BoundedWaitNotifyRestaurant implements Restaurant {
      * @param order The order to be queued.
      */
     @Override
-    public synchronized void receive(Order order) throws InterruptedException {
-        while (queue.size() >= size) {  
-            this.wait();
+    public void receive(Order order) throws InterruptedException {
+        
+        //Thread safe implementation using wait() and notify() to avoid errors
+        processOrder();
+        synchronized(this){
+            queue.add(order);
         }
-
-        queue.add(order);
+        
     }
 
     /**
@@ -44,9 +42,24 @@ public class BoundedWaitNotifyRestaurant implements Restaurant {
      */
     @Override
     public Order cook() throws InterruptedException {
-        while (queue.size() == 0) {
-            if (Thread.interrupted()) throw new InterruptedException();
+        Order order;
+        processOrder();
+        synchronized (this){
+            while (queue.size() == 0) {
+                try{
+                    wait();
+                } catch (InterruptedException e){
+
+                }
+            } 
+            order = queue.poll();
+            notifyAll();
         }
-        return queue.poll();
+        processOrder();
+        return order;
+    }
+
+    private static void processOrder() throws InterruptedException {
+        Thread.sleep(100);
     }
 }
